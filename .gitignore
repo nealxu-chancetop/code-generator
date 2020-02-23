@@ -1,0 +1,12 @@
+/.idea
+/.gradle
+sandbox/
+node_modules/
+build/
+*.iml
+/classes/
+**/src/dev/java/
+.DS_Store
+**/src/main/dist/
+.vscode
+/wiki

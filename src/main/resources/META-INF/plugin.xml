@@ -1,0 +1,27 @@
+<idea-plugin>
+    <id>com.neal.plugin.generator</id>
+    <name>code-generator</name>
+    <vendor email="nealxu@chancetop.com" url="http://www.chancetop.com">chancetop</vendor>
+
+    <description><![CDATA[
+        Simple generate code
+        Use Alt+Enter to generate
+    ]]></description>
+
+    <idea-version since-build="141.0"/>
+    
+    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+         on how to target different products -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Add your extensions here -->
+        <intentionAction>
+            <className>com.chancetop.plugin.generator.action.GenerateSetterAction</className>
+        </intentionAction>
+    </extensions>
+
+    <actions>
+        <!-- Add your actions here -->
+    </actions>
+</idea-plugin>
