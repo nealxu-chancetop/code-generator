@@ -37,7 +37,6 @@ public class SpiUtil {
         if (document != null) {
             psiDocumentManager.doPostponedOperationsAndUnblockDocument(document);
             psiDocumentManager.commitDocument(document);
-            FileDocumentManager.getInstance().saveDocument(document);
         }
     }
 }

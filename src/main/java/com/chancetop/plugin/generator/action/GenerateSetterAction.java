@@ -6,7 +6,6 @@ import com.intellij.codeInsight.intention.PsiElementBaseIntentionAction;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.ui.Messages;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.PsiDeclarationStatement;
 import com.intellij.psi.PsiDocumentManager;
@@ -69,8 +68,8 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
         }
         if (fields.size() == 0)
             return;
-        String sourceName = Messages.showInputDialog(project, "source name", "Please Input Source Name", Messages.getInformationIcon());
-        if (sourceName == null) sourceName = "";
+        String sourceName = "source_name";//Messages.showInputDialog(project, "source name", "Please Input Source Name", Messages.getInformationIcon());
+//        if (sourceName == null || sourceName.trim().length() == 0) return;
 
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiFile containingFile = element.getContainingFile();
@@ -79,23 +78,59 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
 
         String generateStr = generateStr(generateName, sourceName, splitText, fields);
         document.insertString(parent.getTextOffset() + parent.getText().length(), generateStr);
+
         SpiUtil.commitAndSaveDocument(psiDocumentManager, document);
     }
 
     private String generateStr(String generateName, String sourceName, String splitText, List<PsiField> fields) {
         StringBuilder builder = new StringBuilder();
-        builder.append(splitText);
         for (PsiField field : fields) {
-            PsiClass fieldClass = PsiTypesUtil.getPsiClass(field.getType());
-            builder.append(generateName).append('.').append(field.getName()).append(" = ");
-            if (fieldClass != null && fieldClass.isEnum()) {
-                builder.append(fieldClass.getName()).append(".valueOf(").append(sourceName).append('.').append(field.getName()).append(".name());");
-            } else {
-                builder.append(sourceName).append('.').append(field.getName()).append(';');
-            }
             builder.append(splitText);
+            PsiClass fieldClass = PsiTypesUtil.getPsiClass(field.getType());
+            if (fieldClass == null) {
+                buildEquals(builder, field, generateName, sourceName);
+                continue;
+            }
+            if (fieldClass.isEnum()) {
+                buildIfNull(builder, field, sourceName, splitText);
+                buildEnum(builder, field, fieldClass, generateName, sourceName);
+            } else if ("java.util.List".equals(fieldClass.getQualifiedName())) {
+                buildIfNull(builder, field, sourceName, splitText);
+                buildList(builder, field, generateName, sourceName);
+            } else {
+                buildEquals(builder, field, generateName, sourceName);
+            }
         }
         return builder.toString();
     }
 
+    private String getOddName(String name) {
+        if (name.endsWith("ies")) {
+            return name.substring(0, name.length() - 1) + "y";
+        } else if (name.endsWith("s")) {
+            return name.substring(0, name.length() - 1);
+        }
+        return name;
+    }
+
+    private void buildIfNull(StringBuilder builder, PsiField field, String sourceName, String splitText) {
+        if (!field.hasAnnotation("core.framework.api.validate.NotNull")) {
+            builder.append("if (").append(sourceName).append('.').append(field.getName()).append(" != null)").append(splitText).append("    ");
+        }
+    }
+
+    private void buildList(StringBuilder builder, PsiField field, String generateName, String sourceName) {
+        builder.append(generateName).append('.').append(field.getName()).append(" = ")
+            .append(sourceName).append('.').append(field.getName()).append(".stream().map(").append(getOddName(field.getName())).append(" -> { }).collect(Collectors.toList());");
+    }
+
+    private void buildEnum(StringBuilder builder, PsiField field, PsiClass fieldClass, String generateName, String sourceName) {
+        builder.append(generateName).append('.').append(field.getName()).append(" = ")
+            .append(fieldClass.getName()).append(".valueOf(").append(sourceName).append('.').append(field.getName()).append(".name());");
+    }
+
+    private void buildEquals(StringBuilder builder, PsiField field, String generateName, String sourceName) {
+        builder.append(generateName).append('.').append(field.getName()).append(" = ")
+            .append(sourceName).append('.').append(field.getName()).append(';');
+    }
 }
