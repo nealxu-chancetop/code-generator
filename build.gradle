@@ -34,7 +34,7 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
-      1.1 - remove input dialog, add list stream() generate, add @NotNull generate
+      1.1 - remove input dialog, add list stream() generate, add @NotNull generate.<br>
       1.0 - Simple generation of single-level entity variables.<br>
       """
 }
