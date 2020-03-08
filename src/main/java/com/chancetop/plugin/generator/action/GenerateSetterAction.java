@@ -19,13 +19,16 @@ import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author Neal
  */
 public class GenerateSetterAction extends PsiElementBaseIntentionAction {
+    private final static String SOURCE_NAME = "source_name";
+
     @Override
     public void invoke(@NotNull Project project, Editor editor, @NotNull PsiElement element) throws IncorrectOperationException {
         PsiLocalVariable localVariable = PsiTreeUtil.getParentOfType(element, PsiLocalVariable.class);
@@ -61,47 +64,15 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
         PsiClass psiClass = PsiTypesUtil.getPsiClass(localVariable.getType());
         String generateName = localVariable.getName();
 
-        List<PsiField> fields = new ArrayList<>();
-        for (PsiField field : psiClass.getAllFields()) {
-            if (SpiUtil.isValidField(field))
-                fields.add(field);
-        }
-        if (fields.size() == 0)
-            return;
-        String sourceName = "source_name";//Messages.showInputDialog(project, "source name", "Please Input Source Name", Messages.getInformationIcon());
-//        if (sourceName == null || sourceName.trim().length() == 0) return;
-
         PsiDocumentManager psiDocumentManager = PsiDocumentManager.getInstance(project);
         PsiFile containingFile = element.getContainingFile();
         Document document = psiDocumentManager.getDocument(containingFile);
         String splitText = SpiUtil.calculateSplitText(document, parent.getTextOffset());
 
-        String generateStr = generateStr(generateName, sourceName, splitText, fields);
+        StringBuilder generateStr = buildClass(psiClass, generateName, splitText);
+        if (generateStr.length() == 0) return;
         document.insertString(parent.getTextOffset() + parent.getText().length(), generateStr);
-
         SpiUtil.commitAndSaveDocument(psiDocumentManager, document);
-    }
-
-    private String generateStr(String generateName, String sourceName, String splitText, List<PsiField> fields) {
-        StringBuilder builder = new StringBuilder();
-        for (PsiField field : fields) {
-            builder.append(splitText);
-            PsiClass fieldClass = PsiTypesUtil.getPsiClass(field.getType());
-            if (fieldClass == null) {
-                buildEquals(builder, field, generateName, sourceName);
-                continue;
-            }
-            if (fieldClass.isEnum()) {
-                buildIfNull(builder, field, sourceName, splitText);
-                buildEnum(builder, field, fieldClass, generateName, sourceName);
-            } else if ("java.util.List".equals(fieldClass.getQualifiedName())) {
-                buildIfNull(builder, field, sourceName, splitText);
-                buildList(builder, field, generateName, sourceName);
-            } else {
-                buildEquals(builder, field, generateName, sourceName);
-            }
-        }
-        return builder.toString();
     }
 
     private String getOddName(String name) {
@@ -113,24 +84,52 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
         return name;
     }
 
-    private void buildIfNull(StringBuilder builder, PsiField field, String sourceName, String splitText) {
+    private boolean buildIfNull(StringBuilder builder, PsiField field, String splitText) {
         if (!field.hasAnnotation("core.framework.api.validate.NotNull")) {
-            builder.append("if (").append(sourceName).append('.').append(field.getName()).append(" != null)").append(splitText).append("    ");
+            builder.append("if (").append(SOURCE_NAME).append('.').append(field.getName()).append(" != null){").append(splitText).append("    ");
+            return true;
         }
+        return false;
     }
 
-    private void buildList(StringBuilder builder, PsiField field, String generateName, String sourceName) {
+    private void buildList(StringBuilder builder, PsiField field, String generateName) {
         builder.append(generateName).append('.').append(field.getName()).append(" = ")
-            .append(sourceName).append('.').append(field.getName()).append(".stream().map(").append(getOddName(field.getName())).append(" -> { }).collect(Collectors.toList());");
+            .append(SOURCE_NAME).append('.').append(field.getName()).append(".stream().map(").append(getOddName(field.getName())).append(" -> { }).collect(Collectors.toList());");
     }
 
-    private void buildEnum(StringBuilder builder, PsiField field, PsiClass fieldClass, String generateName, String sourceName) {
+    private void buildEnum(StringBuilder builder, PsiField field, PsiClass fieldClass, String generateName) {
         builder.append(generateName).append('.').append(field.getName()).append(" = ")
-            .append(fieldClass.getName()).append(".valueOf(").append(sourceName).append('.').append(field.getName()).append(".name());");
+            .append(fieldClass.getName()).append(".valueOf(").append(SOURCE_NAME).append('.').append(field.getName()).append(".name());");
     }
 
-    private void buildEquals(StringBuilder builder, PsiField field, String generateName, String sourceName) {
+    private void buildEquals(StringBuilder builder, PsiField field, String generateName) {
         builder.append(generateName).append('.').append(field.getName()).append(" = ")
-            .append(sourceName).append('.').append(field.getName()).append(';');
+            .append(SOURCE_NAME).append('.').append(field.getName()).append(';');
+    }
+
+    private StringBuilder buildClass(PsiClass psiClass, String generateName, String splitText) {
+        StringBuilder builder = new StringBuilder();
+        List<PsiField> fields = Arrays.stream(psiClass.getAllFields()).filter(SpiUtil::isValidField).collect(Collectors.toList());
+        if (fields.isEmpty()) return builder;
+        fields.forEach(field -> {
+            builder.append(splitText);
+            PsiClass fieldClass = PsiTypesUtil.getPsiClass(field.getType());
+            //basic data type || lang data type
+            if (fieldClass == null || fieldClass.getQualifiedName().startsWith("java.lang")) {
+                buildEquals(builder, field, generateName);
+                return;
+            }
+            boolean ifNull = buildIfNull(builder, field, splitText);
+            if (fieldClass.isEnum()) {
+                buildEnum(builder, field, fieldClass, generateName);
+            } else if ("java.util.List".equals(fieldClass.getQualifiedName())) {
+                buildList(builder, field, generateName);
+            } else {
+                buildEquals(builder, field, generateName); //class equals
+            }
+            if (ifNull)
+                builder.append(splitText).append('}');
+        });
+        return builder;
     }
 }

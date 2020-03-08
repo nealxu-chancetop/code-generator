@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.neal.plugin.generator'
-version '1.1'
+version '1.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -34,6 +34,7 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
+      1.2 - optimize class check, add null check code.<br>
       1.1 - remove input dialog, add list stream() generate, add @NotNull generate.<br>
       1.0 - Simple generation of single-level entity variables.<br>
       """
