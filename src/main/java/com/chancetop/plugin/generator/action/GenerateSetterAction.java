@@ -15,6 +15,7 @@ import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiLocalVariable;
 import com.intellij.psi.util.PsiTreeUtil;
 import com.intellij.psi.util.PsiTypesUtil;
+import com.intellij.psi.util.PsiUtil;
 import com.intellij.util.IncorrectOperationException;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -93,8 +94,15 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
     }
 
     private void buildList(StringBuilder builder, PsiField field, String generateName) {
-        builder.append(generateName).append('.').append(field.getName()).append(" = ")
-            .append(SOURCE_NAME).append('.').append(field.getName()).append(".stream().map(").append(getOddName(field.getName())).append(" -> { }).collect(Collectors.toList());");
+        PsiClass genericClass = PsiTypesUtil.getPsiClass(PsiUtil.extractIterableTypeParameter(field.getType(), false));
+        String oddName = getOddName(field.getName());
+        if (genericClass.isEnum()) {
+            builder.append(generateName).append('.').append(field.getName()).append(" = ")
+                .append(SOURCE_NAME).append('.').append(field.getName()).append(".stream().map(").append(oddName).append(" -> ").append(genericClass.getName()).append(".valueOf(").append(oddName).append(".name())).collect(Collectors.toList());");
+        } else {
+            builder.append(generateName).append('.').append(field.getName()).append(" = ")
+                .append(SOURCE_NAME).append('.').append(field.getName()).append(".stream().map(").append(oddName).append(" -> { }).collect(Collectors.toList());");
+        }
     }
 
     private void buildEnum(StringBuilder builder, PsiField field, PsiClass fieldClass, String generateName) {
@@ -119,10 +127,16 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
                 buildEquals(builder, field, generateName);
                 return;
             }
+            boolean isList = "java.util.List".equals(fieldClass.getQualifiedName());
+            if (isList && PsiUtil.extractIterableTypeParameter(field.getType(), false).getCanonicalText().startsWith("java.lang")) {
+                buildEquals(builder, field, generateName);
+                return;
+            }
+
             boolean ifNull = buildIfNull(builder, field, splitText);
             if (fieldClass.isEnum()) {
                 buildEnum(builder, field, fieldClass, generateName);
-            } else if ("java.util.List".equals(fieldClass.getQualifiedName())) {
+            } else if (isList) {
                 buildList(builder, field, generateName);
             } else {
                 buildEquals(builder, field, generateName); //class equals
