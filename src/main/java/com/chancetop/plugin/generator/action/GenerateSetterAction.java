@@ -78,7 +78,7 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
 
     private String getOddName(String name) {
         if (name.endsWith("ies")) {
-            return name.substring(0, name.length() - 1) + "y";
+            return name.substring(0, name.length() - 3) + "y";
         } else if (name.endsWith("s")) {
             return name.substring(0, name.length() - 1);
         }
@@ -123,12 +123,12 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
             builder.append(splitText);
             PsiClass fieldClass = PsiTypesUtil.getPsiClass(field.getType());
             //basic data type || lang data type
-            if (fieldClass == null || fieldClass.getQualifiedName().startsWith("java.lang")) {
+            if (fieldClass == null || isBasicClass(fieldClass.getQualifiedName())) {
                 buildEquals(builder, field, generateName);
                 return;
             }
             boolean isList = "java.util.List".equals(fieldClass.getQualifiedName());
-            if (isList && PsiUtil.extractIterableTypeParameter(field.getType(), false).getCanonicalText().startsWith("java.lang")) {
+            if (isList && isBasicClass(PsiUtil.extractIterableTypeParameter(field.getType(), false).getCanonicalText())) {
                 buildEquals(builder, field, generateName);
                 return;
             }
@@ -145,5 +145,9 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
                 builder.append(splitText).append('}');
         });
         return builder;
+    }
+
+    private boolean isBasicClass(String className) {
+        return className.startsWith("java.lang") || className.startsWith("java.time");
     }
 }
