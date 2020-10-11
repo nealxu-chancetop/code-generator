@@ -9,7 +9,7 @@
     ]]></description>
 
     <idea-version since-build="183"/>
-    
+
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
     <depends>com.intellij.modules.platform</depends>
@@ -19,9 +19,16 @@
         <intentionAction>
             <className>com.chancetop.plugin.generator.action.GenerateSetterAction</className>
         </intentionAction>
+
     </extensions>
 
     <actions>
         <!-- Add your actions here -->
+        <action id="com.chancetop.plugin.generator.action.GenerateBuilderAction"
+                class="com.chancetop.plugin.generator.action.GenerateBuilderAction"
+                text="Generate Class Builder" description="generate class builder">
+            <add-to-group group-id="NewGroup" anchor="last"/>
+            <add-to-group group-id="JavaGenerateGroup1" anchor="last"/>
+        </action>
     </actions>
 </idea-plugin>
