@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.neal.plugin.generator'
-version '2.0'
+version '2.1'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -34,6 +34,7 @@ intellij {
 }
 patchPluginXml {
     changeNotes """
+      2.1 - modify builder declare to publish.<br>
       2.0 - add generate class builder feature.<br>
       1.4 - add time support, fix plural error.<br>
       1.3 - optimize List generic check.<br>

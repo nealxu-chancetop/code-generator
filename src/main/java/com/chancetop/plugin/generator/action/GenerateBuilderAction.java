@@ -96,7 +96,7 @@ public class GenerateBuilderAction extends AnAction {
         String fieldFormat = "    public %s %s(%s %s) {\n        this.builder.%s = %s;\n        return this;\n    }\n\n";
 
         content.append("public class ").append(builderClassName).append(' ').append("{\n");
-        content.append(tabString).append("private final ").append(targetClassName).append(" builder;\n\n");
+        content.append(tabString).append("public final ").append(targetClassName).append(" builder;\n\n");
 
         List<PsiField> constructFields = new ArrayList<>();
         List<PsiField> fields = new ArrayList<>();
