@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.neal.plugin.generator'
-version '2.1'
+version '2.2'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -32,8 +32,10 @@ intellij {
     updateSinceUntilBuild false
     pluginName 'code-generator'
 }
+
 patchPluginXml {
     changeNotes """
+      2.2 - check visible, fix NPE.<br>
       2.1 - modify builder declare to publish.<br>
       2.0 - add generate class builder feature.<br>
       1.4 - add time support, fix plural error.<br>

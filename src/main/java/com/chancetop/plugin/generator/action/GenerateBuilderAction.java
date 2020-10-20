@@ -21,7 +21,12 @@ import java.util.List;
 public class GenerateBuilderAction extends AnAction {
     @Override
     public void update(@NotNull AnActionEvent event) {
-        event.getPresentation().setEnabledAndVisible("JAVA".equals(event.getData(CommonDataKeys.PSI_ELEMENT).getLanguage().getID()));
+        PsiElement element = event.getData(CommonDataKeys.PSI_ELEMENT);
+        if(element == null){
+            event.getPresentation().setEnabledAndVisible(false);
+        }else {
+            event.getPresentation().setEnabledAndVisible("JAVA".equals(element.getLanguage().getID()));
+        }
     }
 
     @Override
