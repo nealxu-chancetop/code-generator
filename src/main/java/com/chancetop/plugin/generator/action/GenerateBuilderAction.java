@@ -22,9 +22,9 @@ public class GenerateBuilderAction extends AnAction {
     @Override
     public void update(@NotNull AnActionEvent event) {
         PsiElement element = event.getData(CommonDataKeys.PSI_ELEMENT);
-        if(element == null){
+        if (element == null) {
             event.getPresentation().setEnabledAndVisible(false);
-        }else {
+        } else {
             event.getPresentation().setEnabledAndVisible("JAVA".equals(element.getLanguage().getID()));
         }
     }
@@ -42,11 +42,13 @@ public class GenerateBuilderAction extends AnAction {
         if (data.getParent() instanceof PsiJavaFileImpl) {
             targetClassName = fileName.substring(0, fileName.lastIndexOf('.'));
             builderClassName = targetClassName + "Builder";
-        } else {
+        } else if (data instanceof PsiClassImpl) {
             String className = ((PsiClassImpl) data).getName();
             builderClassName = fileName.substring(0, fileName.lastIndexOf('.')) + className + "Builder";
             targetClassName = fileName.substring(0, fileName.lastIndexOf('.')) + '.' + className;
-
+        } else {
+            Messages.showWarningDialog("Not support current mode!", "Warning");
+            return;
         }
 
         if (nav instanceof PsiClassImpl) {
