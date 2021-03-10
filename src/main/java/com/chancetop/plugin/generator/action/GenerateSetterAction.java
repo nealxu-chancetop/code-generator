@@ -21,7 +21,11 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -70,10 +74,30 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
         Document document = psiDocumentManager.getDocument(containingFile);
         String splitText = SpiUtil.calculateSplitText(document, parent.getTextOffset());
 
-        StringBuilder generateStr = buildClass(psiClass, generateName, splitText);
+        Set<String> useVariableSet = scanUseVariables(parent, generateName);
+
+        StringBuilder generateStr = buildClass(psiClass, generateName, useVariableSet, splitText);
         if (generateStr.length() == 0) return;
         document.insertString(parent.getTextOffset() + parent.getText().length(), generateStr);
         SpiUtil.commitAndSaveDocument(psiDocumentManager, document);
+    }
+
+    @NotNull
+    private Set<String> scanUseVariables(PsiElement parent, String generateName) {
+        Set<String> useVariableSet = new HashSet<>();
+        Pattern pattern = Pattern.compile("\\s*" + generateName + "\\.([\\w\\d_]+?)\\s*?=.*");
+        PsiElement nextSibling = parent.getNextSibling();
+        while (nextSibling != null) {
+            if (nextSibling.getText().trim().equals("}")) break;
+            if (!nextSibling.getText().trim().isEmpty()) {
+                Matcher matcher = pattern.matcher(nextSibling.getText());
+                if (matcher.find()) {
+                    useVariableSet.add(matcher.group(1));
+                }
+            }
+            nextSibling = nextSibling.getNextSibling();
+        }
+        return useVariableSet;
     }
 
     private String getOddName(String name) {
@@ -115,9 +139,9 @@ public class GenerateSetterAction extends PsiElementBaseIntentionAction {
             .append(SOURCE_NAME).append('.').append(field.getName()).append(';');
     }
 
-    private StringBuilder buildClass(PsiClass psiClass, String generateName, String splitText) {
+    private StringBuilder buildClass(PsiClass psiClass, String generateName, Set<String> useVariableSet, String splitText) {
         StringBuilder builder = new StringBuilder();
-        List<PsiField> fields = Arrays.stream(psiClass.getAllFields()).filter(SpiUtil::isValidField).collect(Collectors.toList());
+        List<PsiField> fields = Arrays.stream(psiClass.getAllFields()).filter(field -> SpiUtil.isValidField(field) && !useVariableSet.contains(field.getName())).collect(Collectors.toList());
         if (fields.isEmpty()) return builder;
         fields.forEach(field -> {
             builder.append(splitText);

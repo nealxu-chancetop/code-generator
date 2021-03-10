@@ -105,17 +105,12 @@ public class GenerateBuilderAction extends AnAction {
         content.append("public class ").append(builderClassName).append(' ').append("{\n");
         content.append(tabString).append("public final ").append(targetClassName).append(" builder;\n\n");
 
-        List<PsiField> constructFields = new ArrayList<>();
         List<PsiField> fields = new ArrayList<>();
 
         for (PsiField field : psiClass.getAllFields()) {
-            if (field.hasAnnotation("core.framework.api.validate.NotNull")) {
-                constructFields.add(field);
-            } else {
-                fields.add(field);
-            }
+            fields.add(field);
         }
-        content.append(buildConstructMethod(builderClassName, targetClassName, constructFields));
+        content.append(buildConstructMethod(builderClassName, targetClassName, new ArrayList<>()));
 
         for (PsiField field : fields) {
             content.append(String.format(fieldFormat, builderClassName, field.getName(), field.getType().getPresentableText(), field.getName(), field.getName(), field.getName(), field.getName()));

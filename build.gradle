@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'com.neal.plugin.generator'
-version '2.3'
+version '2.4'
 
 sourceCompatibility = JavaVersion.VERSION_1_8
 targetCompatibility = JavaVersion.VERSION_1_8
@@ -35,6 +35,7 @@ intellij {
 
 patchPluginXml {
     changeNotes """
+      2.4 - Enhanced code policy, now the existing variables will not generate the corresponding setting.<br>
       2.3 - Support IC-2020.2.3.<br>
       2.2 - check visible, fix NPE.<br>
       2.1 - modify builder declare to publish.<br>
