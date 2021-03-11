@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.neal.plugin.generator</id>
     <name>code-generator</name>
-    <vendor email="nealxu@chancetop.com" url="http://www.chancetop.com">chancetop</vendor>
+    <vendor email="nealxu@chancetop.com" url="https://github.com/nealxu-chancetop">chancetop</vendor>
 
     <description><![CDATA[
         Simple generate code
